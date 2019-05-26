@@ -22,21 +22,27 @@ struct Vec3
         return sqrt(sum);
 	}
 
-    __device__ Vec3 operator+(const Vec3& other)
+    __device__ Vec3 operator+(const Vec3& other) const
 	{
 		Vec3 newVec(x + other.x, y + other.y, z + other.z);
 		return newVec;
 	}
 
-    __device__ Vec3 operator-(const Vec3& other)
+    __device__ Vec3 operator-(const Vec3& other) const
 	{
 		Vec3 newVec(x - other.x, y - other.y, z - other.z);
 		return newVec;
 	}
 
-    __device__ Vec3 operator*(const Vec3& other)
+    __device__ Vec3 operator*(const Vec3& other) const
 	{
 		Vec3 newVec(x * other.x, y * other.y, z * other.z);
 		return newVec;
 	}
+
+    __device__ Vec3 operator/(float a) const
+    {
+        Vec3 newVec(x / a, y / a, z / a);
+        return newVec;
+    }
 };

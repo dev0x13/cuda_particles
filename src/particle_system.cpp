@@ -1,4 +1,5 @@
-#include <stdlib.h>
+#include <scene_objects.h>
+
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -19,6 +20,8 @@ const float inertia = 0.1f;
 // Window dimensions
 int windowWidth = 640;
 int windowHeight = 640;
+
+std::vector<SceneObjectsFactory::Ptr> scene;
 
 ParticleManager *pManager;
 
@@ -55,35 +58,55 @@ static void idle(void) {
 /**
  * Renders to the screen.
  */
-static void render(void) {
+static void render() {
+    static constexpr const GLfloat ambientLight[]  = {0.2, 0.2, 0.2, 1.0};
+    static constexpr const GLfloat diffuseLight[]  = {0.8, 0.8, 0.8, 1.0};
+    static constexpr const GLfloat specularLight[] = {1.0, 1.0, 1.0, 1.0};
+    static constexpr const GLfloat whiteColor[]    = {1.0, 1.0, 1.0, 1.0};
+    static constexpr const GLfloat redColor[]      = {1.0, 0.0, 0.0, 1.0};
+    static constexpr const GLfloat lightPosition[] = {1.0, 0.0, 1.0, 1.0};
+
 	// Clear the screen to begin with
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Move the camera
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	// Set up light
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
 
-	// Update for inertia
-	for (int i = 0; i < 3; ++i) {
-		camera_trans_lag[i] += (camera_trans[i] - camera_trans_lag[i])
-				* inertia;
-		camera_rot_lag[i] += (camera_rot[i] - camera_rot_lag[i]) * inertia;
-	}
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
 
-	// Perform translation and rotation based on view parameters
-	glTranslatef(camera_trans_lag[0], camera_trans_lag[1], camera_trans_lag[2]);
-	glRotatef(camera_rot_lag[0], 1.0, 0.0, 0.0);
-	glRotatef(camera_rot_lag[1], 0.0, 1.0, 0.0);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 
-	// Draw the particles
-	pManager->render();
+    // Move the camera
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-	// Draw the wire cube for the particle enclosure
-	glColor3f(1.0, 1.0, 1.0);
-	glutWireCube(2.0);
+    // Update for inertia
+    for (int i = 0; i < 3; ++i) {
+        camera_trans_lag[i] += (camera_trans[i] - camera_trans_lag[i]) * inertia;
+        camera_rot_lag[i] += (camera_rot[i] - camera_rot_lag[i]) * inertia;
+    }
 
-	// Render to the screen
+    // Perform translation and rotation based on view parameters
+    glTranslatef(camera_trans_lag[0], camera_trans_lag[1], camera_trans_lag[2]);
+    glRotatef(camera_rot_lag[0], 1.0, 0.0, 0.0);
+    glRotatef(camera_rot_lag[1], 0.0, 1.0, 0.0);
+
+    glColor3fv(redColor);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, redColor);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, redColor);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, redColor);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 20);
+
+    for (const auto& e: scene) {
+        e->draw();
+    }
+
+    pManager->render();
+
 	glutSwapBuffers();
 }
 
@@ -162,8 +185,7 @@ void motion(int x, int y) {
 
 void initGL(int argc, char **argv) {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(
-			GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(windowWidth, windowHeight);
 	glutCreateWindow("Particle System");
 	glutIdleFunc(&idle);
@@ -182,23 +204,16 @@ void initGL(int argc, char **argv) {
 
 int main(int argc, char **argv) {
 	initGL(argc, argv);
-	
-	// Default number of particles
-	int numParticles = 100000;
-	
-	// Command line argument used to decide how many particles
-	if (argc > 1) {
-		numParticles = atoi(argv[1]);
-		
-		// If they haven't entered a number
-		if (numParticles == 0) {
-			fprintf(stderr, "Please enter a valid number of particles (1-10000)");
-			return 1;
-		}
-	}
 
+	// Set up params
+	size_t numParticles = 650;
+
+    auto sphere = SceneObjectsFactory::create<Sphere>(Vec3(0.1, -1, 0), 0.1, 100, 100);
+
+    scene.push_back(sphere);
+	
 	// Generate the required number of particles
-	pManager = new ParticleManager(numParticles, Vec3(2, 2, 2));
+	pManager = new ParticleManager(numParticles, scene);
 
 	glutMainLoop();
 

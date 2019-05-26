@@ -11,7 +11,10 @@ find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
 
-file(GLOB sources src/*.cpp src/*.cu)
+file(GLOB sources
+    src/*.cpp
+    src/*.cu
+    src/scene_objects/*.cpp)
 
 add_executable(
     particles

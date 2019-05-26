@@ -1,10 +1,11 @@
 #include "particle.h"
 
-Particle::Particle(Vec3 pos, Vec3 vel, float radius, float lifeTime) :
+Particle::Particle(Vec3 pos, Vec3 vel, float radius, float age, float lifeTime) :
 	position(pos),
 	velocity(vel),
 	radius(radius),
-    lifeTime(lifeTime)
+	age(age),
+    lifetime(lifeTime)
 { }
 
 // Move this particle

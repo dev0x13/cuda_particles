@@ -2,7 +2,9 @@
 
 #include <vector>
 #include "particle.h"
-#include "vec.h"
+#include "vec3.h"
+#include "scene_objects.h"
+#include "scene_objects_factory.h"
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -10,13 +12,16 @@
 class ParticleManager {
 protected:
 	Particle *particles;
-	float *particlesFloatArray;
 
-	GLuint mainVBO;
+	float *particlesPosFloatArray;
+    float *particlesVelFloatArray;
+
+    GLuint mainVBO;
 	GLuint colorVBO;
+	GLuint velVBO;
 	GLuint glslProgram;
 
-    void updateParticlesFloatArray();
+    void updateParticlesFloatArrays();
 
 public:
 	size_t numParticles;
@@ -25,7 +30,7 @@ public:
     float windowHeight = 0;
     float fieldOfView = 0;
 
-    ParticleManager(size_t numParticles, Vec3 boxDimensions);
+    ParticleManager(size_t numParticles, const std::vector<SceneObjectsFactory::Ptr>& scene);
 
 	void update();
 	void render();

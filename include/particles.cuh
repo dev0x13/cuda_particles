@@ -1,6 +1,8 @@
 #pragma once
 
-#include "particle.h"
+class Particle;
+class Sphere;
 
-void cuda_init(Particle *particles, int numParticles);
+void cuda_scene_add_spheres(Sphere* spheres, size_t numSpheres);
+void cuda_init(Particle *particles, size_t numParticles);
 void cuda_particles_update();
