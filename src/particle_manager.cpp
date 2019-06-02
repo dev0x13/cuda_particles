@@ -1,7 +1,8 @@
-#include "ParticleManager.h"
-#include "particles.cuh"
-#include "shaders.h"
-#include <iostream>
+#include "particle_manager.h"
+#include "particle_manager_cuda.cuh"
+
+#include <shaders.h>
+#include <particle.h>
 
 GLuint createVBO(GLuint size) {
 	GLuint vbo;
@@ -43,23 +44,11 @@ GLuint compileProgram(
 
 	glLinkProgram(program);
 
-    // check if program linked
-    GLint success = 0;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-
-    if (!success) {
-        char temp[256];
-        glGetProgramInfoLog(program, 256, nullptr, temp);
-        std::cout << temp;
-        glDeleteProgram(program);
-        program = 0;
-    }
-
 	return program;
 }
 
-void ParticleManager::updateParticlesFloatArrays() {
-    for (int i = 0; i < numParticles; i++) {
+void ParticleSystem::updateParticlesFloatArrays() {
+    for (int i = 0; i < conf.numParticles; ++i) {
         int idx = i * 4;
 
         particlesPosFloatArray[idx] = particles[i].position.x;
@@ -74,60 +63,42 @@ void ParticleManager::updateParticlesFloatArrays() {
     }
 }
 
-ParticleManager::ParticleManager(size_t numParticles, const std::vector<SceneObjectsFactory::Ptr>& scene):
-    numParticles(numParticles),
-    particlesFloatArraySize(numParticles * 4)
+ParticleSystem::ParticleSystem(const Config& conf_, const std::vector<SceneObjectsFactory::Ptr>& scene):
+    conf(conf_),
+    particlesFloatArraySize(conf.numParticles * 4)
 {
-	particles = new Particle[numParticles];
+	particles = new Particle[conf.numParticles];
 
 	particlesPosFloatArray = new float[particlesFloatArraySize];
     particlesVelFloatArray = new float[particlesFloatArraySize];
 
-	cuda_init(particles, numParticles);
+	ParticleManagerCuda::Init(particles, conf);
 
-	std::vector<Sphere*> spheres;
+	if (!scene.empty()) {
+        std::vector<Sphere *> spheres;
 
-	for (auto& s: scene) {
-	    if (s->type() == SPHERE) {
-	        spheres.push_back(static_cast<Sphere*>(s.get()));
-	    }
-	}
+        for (auto &s: scene) {
+            if (s->type() == SPHERE) {
+                spheres.push_back(static_cast<Sphere *>(s.get()));
+            }
+        }
 
-	cuda_scene_add_spheres(*spheres.data(), spheres.size());
+        if (!spheres.empty()) {
+            ParticleManagerCuda::AddSpheresToScene(spheres.data(), spheres.size());
+        }
+    }
 
 	static const constexpr Shaders shaders;
 
 	glslProgram = compileProgram(shaders.mblurVS, shaders.particlePS, shaders.mblurGS);
 
 	mainVBO = createVBO(sizeof(float) * particlesFloatArraySize);
-	colorVBO = createVBO(sizeof(float) * particlesFloatArraySize);
-    velVBO = createVBO(sizeof(float) * particlesFloatArraySize);
-
-//	glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
-//
-//	auto data = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-//
-//	for (int i = 0; i < numParticles; i++) {
-//		*data++ = 0.9;
-//		*data++ = 0.9;
-//		*data++ = 0.9;
-//		*data++ = 1.0f;
-//	}
-//
-//	glUnmapBuffer(GL_ARRAY_BUFFER);
+    posVBO = createVBO(sizeof(float) * particlesFloatArraySize);
 }
 
-// Update method, called every time the particles move
-void ParticleManager::update() {
-    //GLfloat matrix[16];
-//    glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
-//
-//    float DOF[3];
-//    DOF[0] = matrix[2];
-//    DOF[1] = matrix[6];
-//    DOF[2] = matrix[10];
+void ParticleSystem::update() {
 
-    cuda_particles_update();
+    ParticleManagerCuda::Update();
 
     updateParticlesFloatArrays();
 
@@ -135,41 +106,34 @@ void ParticleManager::update() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * particlesFloatArraySize, particlesPosFloatArray, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, velVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, posVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * particlesFloatArraySize, particlesVelFloatArray, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ParticleManager::render() {
+void ParticleSystem::draw() const {
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
     glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);  // don't write depth
+    glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
 
-    glColor4f(0.0f, 0.0f, 1.0f, 0.8f);
+    glColor4f(conf.particleColor.x, conf.particleColor.y, conf.particleColor.z, 0.8f);
 
     glUseProgram(glslProgram);
 
-    glUniform1f(glGetUniformLocation(glslProgram, "timestep"), 5);
-	glUniform1f(glGetUniformLocation(glslProgram, "pointRadius"),
-			particles[0].radius);
+	glUniform1f(glGetUniformLocation(glslProgram, "particleRadius"), conf.particleRadius);
 
-    // Bind the vertex VBO
     glBindBuffer(GL_ARRAY_BUFFER, mainVBO);
     glVertexPointer(4, GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    glBindBuffer(GL_ARRAY_BUFFER, velVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, posVBO);
+
     glClientActiveTexture(GL_TEXTURE0);
     glTexCoordPointer(4, GL_FLOAT, 0, nullptr);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glDrawArrays(GL_POINTS, 0, numParticles);
-
-
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER_ARB, mIndexBuffer);
-//    glDrawElements(GL_POINTS, numParticles, GL_UNSIGNED_INT, nullptr);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+    glDrawArrays(GL_POINTS, 0, conf.numParticles);
 
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);

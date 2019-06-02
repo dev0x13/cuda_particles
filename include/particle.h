@@ -1,7 +1,6 @@
-#ifndef __particle_h_
-#define __particle_h_
+#pragma once
 
-#include "vec3.h"
+#include <vec3.h>
 
 struct Particle {
 	Vec3 position;
@@ -10,18 +9,19 @@ struct Particle {
 	float radius;
 	float age;
 	float lifetime;
-	
-	Particle(Vec3 pos, Vec3 vel, float radius, float age, float lifeTime);
+
+    Particle(Vec3 pos, Vec3 vel, float radius, float age, float lifeTime) :
+            position(pos),
+            velocity(vel),
+            radius(radius),
+            age(age),
+            lifetime(lifeTime) {}
 
 	Particle() {
 	    radius = 0;
 	    age = 0;
 	    lifetime = 0;
 	};
-
-	void move();
-
-	bool collidesWith(Particle *other);
 };
 
-#endif
+

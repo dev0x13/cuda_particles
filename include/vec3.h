@@ -12,8 +12,8 @@ struct Vec3
 	__device__ Vec3(float x, float y, float z): x(x), y(y), z(z) {}
 
 	__device__ Vec3() {};
-	
-	float length() {
+
+    float length() const {
         float sum = 0;
         sum += x * x;
         sum += y * y;
@@ -43,6 +43,12 @@ struct Vec3
     __device__ Vec3 operator/(float a) const
     {
         Vec3 newVec(x / a, y / a, z / a);
+        return newVec;
+    }
+
+    __device__ Vec3 operator*(float a) const
+    {
+        Vec3 newVec(x * a, y * a, z * a);
         return newVec;
     }
 };
