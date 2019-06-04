@@ -14,7 +14,7 @@ find_package(GLEW REQUIRED)
 
 file(GLOB sources
     src/*.cpp
-    src/*.cu
+    src/cuda/*.cu
     src/scene_objects/*.cpp)
 
 add_executable(

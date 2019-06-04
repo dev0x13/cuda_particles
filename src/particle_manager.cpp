@@ -1,5 +1,5 @@
 #include "particle_manager.h"
-#include "particle_manager_cuda.cuh"
+#include "cuda/particle_manager.cuh"
 
 #include <shaders.h>
 #include <particle.h>

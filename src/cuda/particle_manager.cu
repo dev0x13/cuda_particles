@@ -1,4 +1,6 @@
-#include <particle_manager_cuda.cuh>
+#include <cuda/particle_manager.cuh>
+#include <cuda/noise.cuh>
+
 #include <vec3.h>
 #include <config.h>
 
@@ -10,8 +12,6 @@
 
 #include <particle.h>
 #include <scene_objects.h>
-
-#include <cuda_noise.cuh>
 
 static int numThreads;
 static int numBlocks;
@@ -155,7 +155,7 @@ __global__ void firstEmitParticles(Particle *particles, Config conf) {
 }
 
 
-__global__ void moveParticles(Particle * particles, Config conf, Scene scene) {
+__global__ void moveParticles(Particle * particles, Config conf, Scene scene, int64_t seed) {
 	int t_x = threadIdx.x;
 	int b_x = blockIdx.x;
 	int in_x = b_x * blockDim.x + t_x;
@@ -198,17 +198,13 @@ __global__ void moveParticles(Particle * particles, Config conf, Scene scene) {
 
         velD = velD + conf.gravity * conf.timestep;
 
-//        velD.x += 2 * (curand_uniform(&s) - 0.5) * conf.particleVelocityNoiseFactor.x;
-//        velD.y += 2 * (curand_uniform(&s) - 0.5) * conf.particleVelocityNoiseFactor.y;
-//        velD.z += 2 * (curand_uniform(&s) - 0.5) * conf.particleVelocityNoiseFactor.z;
+        velD.z += NoiseCuda::simplexNoise(make_float3(newPosD.x, newPosD.y, -newPosD.z), 1, seed) * conf.particleVelocityLowFreqNoiseFactor.z;
+        velD.y += NoiseCuda::simplexNoise(make_float3(newPosD.x, -newPosD.y, newPosD.z), 1, seed) * conf.particleVelocityLowFreqNoiseFactor.y;
+        velD.x += NoiseCuda::simplexNoise(make_float3(-newPosD.x, newPosD.y, newPosD.z), 1, seed) * conf.particleVelocityLowFreqNoiseFactor.x;
 
-        velD.z += cudaNoise::perlinNoise(make_float3(newPosD.x, newPosD.y, newPosD.z), 100, in_x) * conf.particleVelocityNoiseFactor.z;
-        velD.y += cudaNoise::perlinNoise(make_float3(newPosD.x, newPosD.y, newPosD.z), 100, in_x) * conf.particleVelocityNoiseFactor.y;
-        velD.x += cudaNoise::perlinNoise(make_float3(newPosD.x, newPosD.y, newPosD.z), 100, in_x + 10) * conf.particleVelocityNoiseFactor.x;
-
-//        velD.z += cudaNoise::perlinNoise(make_float3(newPosD.x, newPosD.y, newPosD.z), 1, clock64()) * conf.particleVelocityNoiseFactor.z;
-//        velD.y += cudaNoise::perlinNoise(make_float3(newPosD.x, newPosD.y, newPosD.z), 1, clock64()) * conf.particleVelocityNoiseFactor.y;
-//        velD.x += cudaNoise::perlinNoise(make_float3(newPosD.x, newPosD.y, newPosD.z), 1, clock64()) * conf.particleVelocityNoiseFactor.x;
+        velD.z += NoiseCuda::simplexNoise(make_float3(newPosD.x, newPosD.y, -newPosD.z), 100, seed) * conf.particleVelocityHighFreqNoiseFactor.z;
+        velD.y += NoiseCuda::simplexNoise(make_float3(newPosD.x, -newPosD.y, newPosD.z), 100, seed) * conf.particleVelocityHighFreqNoiseFactor.y;
+        velD.x += NoiseCuda::simplexNoise(make_float3(-newPosD.x, newPosD.y, newPosD.z), 100, seed) * conf.particleVelocityHighFreqNoiseFactor.x;
 
 		newPosD = DeviceVec(&thisParticle.position) + velD;
 
@@ -258,8 +254,10 @@ void ParticleManagerCuda::Init(Particle *particles, const Config& conf_) {
     firstEmitParticles<<<numThreads, numBlocks>>>(gpuParticles, conf);
 }
 
+#include <chrono>
+
 void ParticleManagerCuda::Update() {
-	moveParticles<<<numThreads, numBlocks>>>(gpuParticles, conf, Scene(gpuSceneSpheres, numSpheresOnScene));
+	moveParticles<<<numThreads, numBlocks>>>(gpuParticles, conf, Scene(gpuSceneSpheres, numSpheresOnScene), std::chrono::system_clock::now().time_since_epoch().count());
 
 	cudaMemcpy(hostParticles, gpuParticles, sizeof(Particle) * conf.numParticles, cudaMemcpyDeviceToHost);
 

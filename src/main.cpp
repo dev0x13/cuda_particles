@@ -175,11 +175,11 @@ void initGL(int argc, char **argv) {
 int main(int argc, char **argv) {
 	initGL(argc, argv);
 
-	auto sphere = SceneObjectsFactory::create<Sphere>(Vec3(0.9, 2.5, 0), 0.9, 100, 100, redColor);
-    //scene.push_back(sphere);
+	auto sphere = SceneObjectsFactory::create<Sphere>(Vec3(0.5, 2.5, 0), 0.1, 100, 100, redColor);
+    scene.push_back(sphere);
 
     auto sphere1 = SceneObjectsFactory::create<Sphere>(Vec3(-0.9, 3.5, 0), 0.5, 100, 100, blueColor);
-    //scene.push_back(sphere1);
+    scene.push_back(sphere1);
 
     auto plane = SceneObjectsFactory::create<Plane>(Vec3(0, -0.1, 0), 10, 10, grayColor);
     scene.push_back(plane);
