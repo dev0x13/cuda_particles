@@ -15,8 +15,9 @@ enum UserAction {
 };
 
 static constexpr const GLfloat redColor[4] = {1, 0, 0, 1};
-static constexpr const GLfloat grayColor[4] = {0.5, 0.5, 0.5, 1};
 static constexpr const GLfloat blueColor[4] = {0, 0, 1, 1};
+static constexpr const GLfloat greenColor[4] = {0, 1, 0, 1};
+static constexpr const GLfloat grayColor[4] = {0.5, 0.5, 0.5, 1};
 
 float camera_trans[] = { 0, -2, -5};
 float camera_rot[] = { 0, 0, 0 };
@@ -58,7 +59,7 @@ static void render() {
     static constexpr const GLfloat specularLight[] = {1.0, 1.0, 1.0, 1.0};
     static constexpr const GLfloat lightPosition[] = {1.0, 4.0, 1.0, 1.0};
 
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_LIGHTING);
@@ -172,20 +173,64 @@ void initGL(int argc, char **argv) {
 	glutReportErrors();
 }
 
+/* Demo with smoke */
+inline void demo0() {
+    scene.push_back(SceneObjectsFactory::create<Plane>(Vec3(0, -0.1, 0), 10, 10, grayColor));
+
+    Config config;
+
+    config.particleInitialVelocity = {0, 0.01, 0};
+    config.numParticles = 20000;
+    config.particleRadius = 0.15;
+    config.emitterRadius = 0.01;
+    config.particleColor = {1, 0.1, 0.1};
+
+    scene.push_back(SceneObjectsFactory::create<ParticleSystem>(config, scene));
+}
+
+/* Demo with water and spherical obstacle */
+inline void demo1() {
+    scene.push_back(SceneObjectsFactory::create<Sphere>(Vec3(-0.3, 1.5, 0), 0.5, 100, 100, greenColor));
+
+    Config config;
+
+    config.numParticles = 1000;
+    config.particleColor = {0.001, 0.001, 1};
+    config.gravity = {0, -0.2, 0};
+    config.particleInitialVelocity = {0, 0, 0};
+    config.emitterPos = {0, 3.5, 0};
+    config.collisionShear = 0.1;
+    config.collisionDamping = 0.002;
+    config.collisionSpring = 0.09;
+
+    scene.push_back(SceneObjectsFactory::create<ParticleSystem>(config, scene));
+}
+
+/* Demo with water and 3 spherical obstacles */
+inline void demo2() {
+    scene.push_back(SceneObjectsFactory::create<Sphere>(Vec3(-0.35, 1.5, 0), 0.2, 100, 100, greenColor));
+    scene.push_back(SceneObjectsFactory::create<Sphere>(Vec3(0.35, 1.5, 0), 0.2, 100, 100, redColor));
+    scene.push_back(SceneObjectsFactory::create<Sphere>(Vec3(0, 0, 0), 0.5, 100, 100, redColor));
+
+    Config config;
+
+    config.numParticles = 10000;
+    config.particleColor = {0.001, 0.001, 1};
+    config.gravity = {0, -0.1, 0};
+    config.particleInitialVelocity = {0, 0, 0};
+    config.emitterPos = {0, 3.5, 0};
+    config.collisionShear = 0.01;
+    config.collisionDamping = 0.002;
+    config.collisionSpring = 0.5;
+    config.particleRadius = 0.07;
+
+    scene.push_back(SceneObjectsFactory::create<ParticleSystem>(config, scene));
+}
+
 int main(int argc, char **argv) {
 	initGL(argc, argv);
 
-	auto sphere = SceneObjectsFactory::create<Sphere>(Vec3(0.5, 2.5, 0), 0.1, 100, 100, redColor);
-    scene.push_back(sphere);
-
-    auto sphere1 = SceneObjectsFactory::create<Sphere>(Vec3(-0.9, 3.5, 0), 0.5, 100, 100, blueColor);
-    scene.push_back(sphere1);
-
-    auto plane = SceneObjectsFactory::create<Plane>(Vec3(0, -0.1, 0), 10, 10, grayColor);
-    scene.push_back(plane);
-
-    auto particleSystem = SceneObjectsFactory::create<ParticleSystem>(Config(), scene);
-    scene.push_back(particleSystem);
+	demo2();
 
 	glutMainLoop();
 

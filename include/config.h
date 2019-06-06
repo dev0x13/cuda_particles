@@ -8,7 +8,7 @@ struct Config {
     float particleMaxLifetime = 1;
     float particleMinLifetime = 1;
 
-    Vec3 particleColor = {0, 0, 1};
+    Vec3 particleColor = {1, 1, 1};
 
     Vec3 particleVelocityHighFreqNoiseFactor = {0.001, 0, 0.001};
     Vec3 particleVelocityLowFreqNoiseFactor = {0.002, 0, 0.002};

@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <chrono>
 
 #include <cuda.h>
 #include <curand_kernel.h>
@@ -154,7 +155,6 @@ __global__ void firstEmitParticles(Particle *particles, Config conf) {
     }
 }
 
-
 __global__ void moveParticles(Particle * particles, Config conf, Scene scene, int64_t seed) {
 	int t_x = threadIdx.x;
 	int b_x = blockIdx.x;
@@ -253,8 +253,6 @@ void ParticleManagerCuda::Init(Particle *particles, const Config& conf_) {
 
     firstEmitParticles<<<numThreads, numBlocks>>>(gpuParticles, conf);
 }
-
-#include <chrono>
 
 void ParticleManagerCuda::Update() {
 	moveParticles<<<numThreads, numBlocks>>>(gpuParticles, conf, Scene(gpuSceneSpheres, numSpheresOnScene), std::chrono::system_clock::now().time_since_epoch().count());
