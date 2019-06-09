@@ -230,6 +230,8 @@ inline void demo2() {
 int main(int argc, char **argv) {
 	initGL(argc, argv);
 
+	//demo0();
+	//demo1();
 	demo2();
 
 	glutMainLoop();
