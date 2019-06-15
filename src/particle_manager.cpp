@@ -5,14 +5,14 @@
 #include <particle.h>
 
 GLuint createVBO(GLuint size) {
-	GLuint vbo;
+    GLuint vbo;
 
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	return vbo;
+    return vbo;
 }
 
 GLuint compileProgram(
@@ -20,31 +20,31 @@ GLuint compileProgram(
         const char* fsource,
         const char* gsource)
 {
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     GLuint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
 
-	glShaderSource(vertexShader, 1, &vsource, nullptr);
-	glShaderSource(fragmentShader, 1, &fsource, nullptr);
+    glShaderSource(vertexShader, 1, &vsource, nullptr);
+    glShaderSource(fragmentShader, 1, &fsource, nullptr);
     glShaderSource(geometryShader, 1, &gsource, nullptr);
 
     glCompileShader(vertexShader);
-	glCompileShader(fragmentShader);
+    glCompileShader(fragmentShader);
     glCompileShader(geometryShader);
 
-	GLuint program = glCreateProgram();
+    GLuint program = glCreateProgram();
 
-	glAttachShader(program, vertexShader);
-	glAttachShader(program, fragmentShader);
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
     glAttachShader(program, geometryShader);
 
     glProgramParameteriEXT(program, GL_GEOMETRY_INPUT_TYPE_EXT, GL_POINTS);
     glProgramParameteriEXT(program, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
     glProgramParameteriEXT(program, GL_GEOMETRY_VERTICES_OUT_EXT, 4);
 
-	glLinkProgram(program);
+    glLinkProgram(program);
 
-	return program;
+    return program;
 }
 
 void ParticleSystem::updateParticlesFloatArrays() {
@@ -67,18 +67,18 @@ ParticleSystem::ParticleSystem(const Config& conf_, const std::vector<SceneObjec
     conf(conf_),
     particlesFloatArraySize(conf.numParticles * 4)
 {
-	particles = new Particle[conf.numParticles];
+    particles = new Particle[conf.numParticles];
 
-	particlesPosFloatArray = new float[particlesFloatArraySize];
+    particlesPosFloatArray = new float[particlesFloatArraySize];
     particlesVelFloatArray = new float[particlesFloatArraySize];
 
-	ParticleManagerCuda::Init(particles, conf);
+    ParticleManagerCuda::Init(particles, conf);
 
-	if (!scene.empty()) {
+    if (!scene.empty()) {
         std::vector<Sphere *> spheres;
 
         for (auto &s: scene) {
-            if (s->type() == SPHERE) {
+            if (s->getType() == SPHERE) {
                 spheres.push_back(static_cast<Sphere *>(s.get()));
             }
         }
@@ -88,11 +88,11 @@ ParticleSystem::ParticleSystem(const Config& conf_, const std::vector<SceneObjec
         }
     }
 
-	static const constexpr Shaders shaders;
+    static const constexpr Shaders shaders;
 
-	glslProgram = compileProgram(shaders.mblurVS, shaders.particlePS, shaders.mblurGS);
+    glslProgram = compileProgram(shaders.mblurVS, shaders.particlePS, shaders.mblurGS);
 
-	mainVBO = createVBO(sizeof(float) * particlesFloatArraySize);
+    mainVBO = createVBO(sizeof(float) * particlesFloatArraySize);
     posVBO = createVBO(sizeof(float) * particlesFloatArraySize);
 }
 
@@ -102,9 +102,9 @@ void ParticleSystem::update() {
 
     updateParticlesFloatArrays();
 
-	glBindBuffer(GL_ARRAY_BUFFER, mainVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * particlesFloatArraySize, particlesPosFloatArray, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, mainVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * particlesFloatArraySize, particlesPosFloatArray, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, posVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * particlesFloatArraySize, particlesVelFloatArray, GL_DYNAMIC_DRAW);
@@ -121,7 +121,7 @@ void ParticleSystem::draw() const {
 
     glUseProgram(glslProgram);
 
-	glUniform1f(glGetUniformLocation(glslProgram, "particleRadius"), conf.particleRadius);
+    glUniform1f(glGetUniformLocation(glslProgram, "particleRadius"), conf.particleRadius);
 
     glBindBuffer(GL_ARRAY_BUFFER, mainVBO);
     glVertexPointer(4, GL_FLOAT, 0, nullptr);

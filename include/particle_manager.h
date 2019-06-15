@@ -7,19 +7,19 @@
 #include <scene_objects_factory.h>
 #include <config.h>
 
-class Particle;
+struct Particle;
 
 class ParticleSystem: public SceneObject {
 
-	Particle *particles;
+    Particle *particles;
 
-	float *particlesPosFloatArray;
+    float *particlesPosFloatArray;
     float *particlesVelFloatArray;
 
     GLuint mainVBO;
-	GLuint posVBO;
+    GLuint posVBO;
 
-	GLuint glslProgram;
+    GLuint glslProgram;
 
     void updateParticlesFloatArrays();
 
@@ -31,10 +31,10 @@ public:
 
     ParticleSystem(const Config& config, const std::vector<SceneObjectsFactory::Ptr>& scene);
 
-	void update() override;
-	void draw() const override;
+    void update() override;
+    void draw() const override;
 
-    SceneObjectType type() const {
+    SceneObjectType getType() const {
         return type_;
     }
 };

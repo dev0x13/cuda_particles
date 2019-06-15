@@ -1,8 +1,8 @@
 #pragma once
 
-class Particle;
+struct Particle;
 class Sphere;
-class Config;
+struct Config;
 
 namespace ParticleManagerCuda {
     void AddSpheresToScene(Sphere **spheres, size_t numSpheres);

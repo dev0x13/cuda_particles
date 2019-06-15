@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vec3.h>
+#include <device_vec3.h>
 
 #include <memory>
 
@@ -17,7 +17,7 @@ class SceneObject {
 public:
     virtual void draw() const = 0;
 
-    virtual SceneObjectType type() const = 0;
+    virtual SceneObjectType getType() const = 0;
 
     virtual void update() {}
 
@@ -27,7 +27,7 @@ public:
 class Sphere : public SceneObject {
 public:
     Sphere(
-        const Vec3& pos,
+        const DeviceVec3& pos,
         float radius,
         int slices,
         int stacks,
@@ -48,6 +48,8 @@ public:
 
     void draw() const;
 
+    /* Was intended to be used both on host and device
+
     __device__ bool collides(const Vec3& point) const {
         return (point.x - pos.x) * (point.x - pos.x) +
                (point.y - pos.y) * (point.y - pos.y) +
@@ -59,14 +61,15 @@ public:
 
         return tmp / tmp.length();
     }
+    */
 
-    SceneObjectType type() const {
+    SceneObjectType getType() const {
         return type_;
     }
 
     ~Sphere() {};
 
-    Vec3 pos;
+    DeviceVec3 pos;
 
     const SceneObjectType type_;
     GLfloat color[4] = {1, 1, 1};
@@ -79,7 +82,7 @@ public:
 class Plane : public SceneObject {
 public:
     Plane(
-            const Vec3& pos,
+            const DeviceVec3& pos,
             float width,
             float length,
             const GLfloat color_[4]
@@ -113,6 +116,7 @@ public:
 
     void draw() const;
 
+    /*
     __device__ bool collides(const Vec3& point) const {
         return false;
     }
@@ -121,14 +125,15 @@ public:
         //return (vertexes[2] - vertexes[0], vertexes[1] - vertexes[0]).norm();
         return Vec3(0, 0, 0);
     }
+    */
 
-    SceneObjectType type() const {
+    SceneObjectType getType() const {
         return type_;
     }
 
     ~Plane() {};
 
-    Vec3 pos;
+    DeviceVec3 pos;
 
     const SceneObjectType type_;
     GLfloat color[4] = {1, 1, 1, 1};
